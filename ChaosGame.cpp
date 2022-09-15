@@ -25,9 +25,9 @@ std::vector<Vector2f> pointPositions;
 const std::string APP_NAME = "Chaos Game";
 const int PIXEL_TOLERANCE_VAL = 10;
 
-const int POINT_RADIUS = 2;
+const int RECT_SIDE_LENGTH = 4;
 int numberOfManuallyGeneratedPoints = 0;
-const int additionalPointsToGenerate = 10000;
+const int additionalPointsToGenerate = 1000;
 
 int currentResX = 1920;
 int currentResY = 1080;
@@ -50,9 +50,12 @@ int main()
 	window.setFramerateLimit(60);
 
 	//create a point
-	CircleShape currentPoint;
-	currentPoint.setRadius(POINT_RADIUS);
-	currentPoint.setOrigin(POINT_RADIUS / 2, POINT_RADIUS / 2);
+	RectangleShape currentPoint;
+	Vector2f defaultSize(RECT_SIDE_LENGTH, RECT_SIDE_LENGTH);
+	Vector2f largeSize(RECT_SIDE_LENGTH * 2, RECT_SIDE_LENGTH * 2);
+
+	Vector2f defaultOrigin(RECT_SIDE_LENGTH / 2, RECT_SIDE_LENGTH / 2);
+	Vector2f largeOrigin(RECT_SIDE_LENGTH, RECT_SIDE_LENGTH);
 
 	Font font;
 	font.loadFromFile("fonts/Tecno Chaos.ttf");
@@ -128,7 +131,8 @@ int main()
 		for (int i = pointPositions.size() - 1; i >= 0; i--)
 		{
 			currentPoint.setPosition(pointPositions[i]);
-			currentPoint.setRadius(POINT_RADIUS * 2);
+			currentPoint.setOrigin(largeOrigin);
+			currentPoint.setSize(largeSize);
 
 			if (pointPositions.size() <= numberOfManuallyGeneratedPoints)
 			{
@@ -143,7 +147,8 @@ int main()
 				else
 				{
 					currentPoint.setFillColor(Color::White);
-					currentPoint.setRadius(POINT_RADIUS);
+					currentPoint.setSize(defaultSize);
+					currentPoint.setOrigin(defaultOrigin);
 				}
 			}
 			else
@@ -155,7 +160,8 @@ int main()
 				else
 				{
 					currentPoint.setFillColor(Color::White);
-					currentPoint.setRadius(POINT_RADIUS);
+					currentPoint.setSize(defaultSize);
+					currentPoint.setOrigin(defaultOrigin);
 				}
 			}
 
@@ -193,8 +199,8 @@ void GeneratePointOnClick(RenderWindow& _window)
 		*	introduce a tolerance level that the user has to click within to connect their shape together.
 		*/
 		if (pointPositions.size() > 2 &&
-			(newPoint.x <= (pointPositions[0].x + fmax(POINT_RADIUS, PIXEL_TOLERANCE_VAL)) && newPoint.x >= (pointPositions[0].x - fmax(POINT_RADIUS, PIXEL_TOLERANCE_VAL))) &&
-			(newPoint.y <= (pointPositions[0].y + fmax(POINT_RADIUS, PIXEL_TOLERANCE_VAL)) && newPoint.y >= (pointPositions[0].y - fmax(POINT_RADIUS, PIXEL_TOLERANCE_VAL)))
+			(newPoint.x <= (pointPositions[0].x + fmax(RECT_SIDE_LENGTH, PIXEL_TOLERANCE_VAL)) && newPoint.x >= (pointPositions[0].x - fmax(RECT_SIDE_LENGTH, PIXEL_TOLERANCE_VAL))) &&
+			(newPoint.y <= (pointPositions[0].y + fmax(RECT_SIDE_LENGTH, PIXEL_TOLERANCE_VAL)) && newPoint.y >= (pointPositions[0].y - fmax(RECT_SIDE_LENGTH, PIXEL_TOLERANCE_VAL)))
 			)
 		{
 			appState = ApplicationState::COMPUTING;
