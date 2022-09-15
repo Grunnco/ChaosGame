@@ -4,6 +4,8 @@
 #include <cmath>
 #include <random>
 
+using namespace sf;
+
 enum class ApplicationState
 {
 	WELCOME = 0,
@@ -13,12 +15,12 @@ enum class ApplicationState
 	FINISHED = 4
 };
 
-void GeneratePointOnClick(sf::RenderWindow&);
+void GeneratePointOnClick(RenderWindow&);
 void GenerateSierpinksiTrianglePoints(int);
 void ResetApplication();
 
 ApplicationState appState = ApplicationState::WELCOME;
-std::vector<sf::Vector2f> pointPositions;
+std::vector<Vector2f> pointPositions;
 
 const std::string APP_NAME = "Chaos Game";
 const int PIXEL_TOLERANCE_VAL = 10;
@@ -37,25 +39,25 @@ int main()
 
 	double scaleMultiplier = 0.75f;
 
-	currentResX = sf::VideoMode::getDesktopMode().width * scaleMultiplier;
-	currentResY = sf::VideoMode::getDesktopMode().height * scaleMultiplier;
+	currentResX = VideoMode::getDesktopMode().width * scaleMultiplier;
+	currentResY = VideoMode::getDesktopMode().height * scaleMultiplier;
 	float aspectRatio = (float)currentResX / (float)currentResY;
 	std::string currentMessage = "DEBUG";
 
 	//VideoMode Object
-	sf::VideoMode vm(currentResX, currentResY);
-	sf::RenderWindow window(vm, APP_NAME, sf::Style::Close);
+	VideoMode vm(currentResX, currentResY);
+	RenderWindow window(vm, APP_NAME, Style::Close);
 	window.setFramerateLimit(60);
 
 	//create a point
-	sf::CircleShape currentPoint;
+	CircleShape currentPoint;
 	currentPoint.setRadius(POINT_RADIUS);
 	currentPoint.setOrigin(POINT_RADIUS / 2, POINT_RADIUS / 2);
 
-	sf::Font font;
+	Font font;
 	font.loadFromFile("fonts/Tecno Chaos.ttf");
 
-	sf::Text text;
+	Text text;
 	text.setFont(font);
 	text.setCharacterSize(75 / aspectRatio * scaleMultiplier);
 	text.setPosition(0, 0);
@@ -63,22 +65,22 @@ int main()
 	while (window.isOpen())
 	{
 		//Event processing
-		sf::Event event;
+		Event event;
 		while (window.pollEvent(event))
 		{
 			switch (event.type)
 			{
-			case sf::Event::Closed:
+			case Event::Closed:
 				window.close();
 				break;
 
-			case sf::Event::KeyPressed:
-				if (sf::Keyboard::isKeyPressed(sf::Keyboard::Escape)) window.close();
-				if (sf::Keyboard::isKeyPressed(sf::Keyboard::Return)) ResetApplication();
+			case Event::KeyPressed:
+				if (Keyboard::isKeyPressed(Keyboard::Escape)) window.close();
+				if (Keyboard::isKeyPressed(Keyboard::Return)) ResetApplication();
 				break;
 
-			case sf::Event::MouseButtonPressed:
-				if (sf::Mouse::isButtonPressed(sf::Mouse::Left))
+			case Event::MouseButtonPressed:
+				if (Mouse::isButtonPressed(Mouse::Left))
 				{
 					GeneratePointOnClick(window);
 				}
@@ -132,15 +134,15 @@ int main()
 			{
 				if (i == 0)
 				{
-					currentPoint.setFillColor(sf::Color::Green);
+					currentPoint.setFillColor(Color::Green);
 				}
 				else if (pointPositions.size() > 1 && i == pointPositions.size() - 1)
 				{
-					currentPoint.setFillColor(sf::Color::Yellow);
+					currentPoint.setFillColor(Color::Yellow);
 				}
 				else
 				{
-					currentPoint.setFillColor(sf::Color::White);
+					currentPoint.setFillColor(Color::White);
 					currentPoint.setRadius(POINT_RADIUS);
 				}
 			}
@@ -148,11 +150,11 @@ int main()
 			{
 				if (i < numberOfManuallyGeneratedPoints)
 				{
-					currentPoint.setFillColor(sf::Color::Blue);
+					currentPoint.setFillColor(Color::Blue);
 				}
 				else
 				{
-					currentPoint.setFillColor(sf::Color::White);
+					currentPoint.setFillColor(Color::White);
 					currentPoint.setRadius(POINT_RADIUS);
 				}
 			}
@@ -173,14 +175,14 @@ int main()
 	return 0;
 }
 
-void GeneratePointOnClick(sf::RenderWindow& _window)
+void GeneratePointOnClick(RenderWindow& _window)
 {
 
 	if ( appState == ApplicationState::WELCOME || appState == ApplicationState::DRAWING)
 	{
 
 		//Create a point where the mouse position is
-		sf::Vector2f newPoint(sf::Mouse::getPosition(_window));
+		Vector2f newPoint(Mouse::getPosition(_window));
 
 		/*
 		*	Oh god where to begin...
@@ -207,9 +209,9 @@ void GeneratePointOnClick(sf::RenderWindow& _window)
 
 void GenerateSierpinksiTrianglePoints(int _resolution)
 {
-	sf::Vector2f startingPoint(currentResX / 2, currentResY / 2);
-	sf::Vector2f randomVertex = pointPositions[rand() % numberOfManuallyGeneratedPoints];
-	sf::Vector2f midPoint;
+	Vector2f startingPoint(currentResX / 2, currentResY / 2);
+	Vector2f randomVertex = pointPositions[rand() % numberOfManuallyGeneratedPoints];
+	Vector2f midPoint;
 
 	for (int i = 0; i < _resolution; i++)
 	{
