@@ -19,16 +19,15 @@ void GenerateRandomPoint();
 void GenerateSierpinksiTrianglePoints(int);
 void ResetApplication();
 
-unsigned int numberOfLoopIterations = 0;
-
 ApplicationState appState = ApplicationState::WELCOME;
 std::vector<sf::Vector2f> pointPositions;
 
 const std::string APP_NAME = "Chaos Game";
 const int PIXEL_TOLERANCE_VAL = 10;
-
 const int RECT_SIDE_LENGTH = 6;
 const int additionalPointsToGenerate = 100000;
+
+const sf::Color TEXT_BOX_BACKGROUND_COLOR(0,0,0,127);
 int numManuallyGenPoints = 0;
 int currentResX = 1920;
 int currentResY = 1080;
@@ -55,11 +54,11 @@ int main()
 	window.setFramerateLimit(60);
 
 	//create a point
-	sf::Vector2f defaultSize(RECT_SIDE_LENGTH, RECT_SIDE_LENGTH);
-	sf::Vector2f largeSize(RECT_SIDE_LENGTH * 2, RECT_SIDE_LENGTH * 2);
+	sf::Vector2f defaultSize(2, 2);
+	sf::Vector2f largeSize(RECT_SIDE_LENGTH, RECT_SIDE_LENGTH);
 
-	sf::Vector2f defaultOrigin(RECT_SIDE_LENGTH / 2, RECT_SIDE_LENGTH / 2);
-	sf::Vector2f largeOrigin(RECT_SIDE_LENGTH, RECT_SIDE_LENGTH);
+	sf::Vector2f defaultOrigin(1, 1);
+	sf::Vector2f largeOrigin(RECT_SIDE_LENGTH / 2, RECT_SIDE_LENGTH / 2);
 
 	sf::Font font;
 	font.loadFromFile("fonts/SebastianSerifNbp-7weB.ttf");
@@ -68,14 +67,19 @@ int main()
 	text.setFont(font);
 	text.setCharacterSize(75 / aspectRatio * scaleMultiplier);
 
-	text.setPosition(font.getLineSpacing(text.getCharacterSize()), font.getLineSpacing(text.getCharacterSize()) / 2);
+	text.setPosition(font.getLineSpacing(text.getCharacterSize()), font.getLineSpacing(text.getCharacterSize()));
+
+
+	const int TEXT_BOX_BORDER = 5;
+	sf::Vector2f textBoundingBoxVector;
+	sf::RectangleShape textBackground;
+	textBackground.setPosition((text.getPosition().x - 2) - TEXT_BOX_BORDER, (text.getPosition().y+7) - TEXT_BOX_BORDER);
+
 	
 
 	//Main game loop
 	while (window.isOpen())
 	{
-		std::cout << "Frame: " << numberOfLoopIterations << std::endl;
-
 		//Event processing
 		sf::Event event;
 		while (window.pollEvent(event))
@@ -108,7 +112,6 @@ int main()
 		{
 		case(ApplicationState::WELCOME):
 			currentMessage = "Welcome to the Chaos Game!\nUse Left Mouse Button to create at least 3 points.\nUse Left Mouse Button on the Green point to start computing!";
-			if (pointPositions.size() > 0) appState = ApplicationState::DRAWING;
 			break;
 
 		case(ApplicationState::DRAWING):
@@ -134,37 +137,40 @@ int main()
 			break;
 		}
 
+
+
 		if (windowNeedsUpdating)
 		{
-			
+			std::cout << "X: " << textBoundingBoxVector.x << ", Y: " << textBoundingBoxVector.y << std::endl;
+
 
 			//Draw the stuff!
-			window.clear();
+			window.clear(sf::Color(20, 20, 20, 255));
+
+
 
 			//Draw all points!
 			for (int i = pointPositions.size() - 1; i >= 0; i--)
 			{
 				currentPoint.setPosition(pointPositions[i]);
-				currentPoint.setOrigin(largeOrigin);
-				currentPoint.setSize(largeSize);
+				currentPoint.setOrigin(defaultOrigin);
+				currentPoint.setSize(defaultSize);
 
 				if (pointPositions.size() <= numManuallyGenPoints)
 				{
 					if (i == 0)
 					{
 						currentPoint.setFillColor(sf::Color::Green);
+						currentPoint.setOrigin(largeOrigin);
+						currentPoint.setSize(largeSize);
 					}
 					else if (pointPositions.size() > 1 && i == pointPositions.size() - 1)
 					{
 						currentPoint.setFillColor(sf::Color::Yellow);
-						currentPoint.setSize(defaultSize);
-						currentPoint.setOrigin(defaultOrigin);
 					}
 					else
 					{
 						currentPoint.setFillColor(sf::Color::White);
-						currentPoint.setSize(defaultSize);
-						currentPoint.setOrigin(defaultOrigin);
 					}
 				}
 				else
@@ -185,15 +191,33 @@ int main()
 			}
 
 
-			if (appState == ApplicationState::RENDERING) appState = ApplicationState::FINISHED;
 
+
+
+			//THE ORDER HERE MATTERS!!!
 			text.setString(currentMessage);
+
+			textBoundingBoxVector.x = text.getLocalBounds().width + (TEXT_BOX_BORDER * 2);
+			textBoundingBoxVector.y = text.getLocalBounds().height + (TEXT_BOX_BORDER * 2);
+
+			textBackground.setSize(textBoundingBoxVector);
+			textBackground.setFillColor(TEXT_BOX_BACKGROUND_COLOR);
+
+			window.draw(textBackground);
 			window.draw(text);
+			//Up to here!!
+
 
 			window.display();
+
+			if (appState == ApplicationState::RENDERING)
+			{
+				appState = ApplicationState::FINISHED;
+				windowNeedsUpdating = true;
+			}
+			else
 			windowNeedsUpdating = false;
 		}
-		numberOfLoopIterations++;
 	}
 
 	return 0;
@@ -226,6 +250,7 @@ void GeneratePointOnClick(sf::RenderWindow& _window)
 		{
 			GeneratePoint(newPoint);
 		}
+
 	}
 }
 
@@ -264,6 +289,7 @@ void GeneratePoint(sf::Vector2f inputPoint)
 {
 	pointPositions.push_back(inputPoint);
 	numManuallyGenPoints++;
+	if (pointPositions.size() > 0) appState = ApplicationState::DRAWING;
 
 	windowNeedsUpdating = true;
 }
