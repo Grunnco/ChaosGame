@@ -92,7 +92,7 @@ int main()
 
 			case sf::Event::KeyPressed:
 				if (sf::Keyboard::isKeyPressed(sf::Keyboard::Escape)) window.close();
-				if (sf::Keyboard::isKeyPressed(sf::Keyboard::Return)) ResetApplication();
+				if (sf::Keyboard::isKeyPressed(sf::Keyboard::Enter)) ResetApplication();
 				if (sf::Keyboard::isKeyPressed(sf::Keyboard::R)) GenerateRandomPoint();
 				break;
 
@@ -136,7 +136,6 @@ int main()
 			currentMessage = "Finished! Total points on screen: " + std::to_string(pointPositions.size()) + "!!!\nPress Return to start again or Escape to exit.";
 			break;
 		}
-
 
 
 		if (windowNeedsUpdating)
