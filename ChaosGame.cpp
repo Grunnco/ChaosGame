@@ -26,14 +26,15 @@ const std::string APP_NAME = "Chaos Game";
 const int PIXEL_TOLERANCE_VAL = 10;
 const int RECT_SIDE_LENGTH = 6;
 const int additionalPointsToGenerate = 100000;
+const float PI = 4.0 * atan(1.0);
 
-const sf::Color TEXT_BOX_BACKGROUND_COLOR(0,0,0,127);
+const sf::Color TEXT_BOX_BACKGROUND_COLOR(0, 0, 0, 127);
 int numManuallyGenPoints = 0;
 int currentResX = 1920;
 int currentResY = 1080;
 double scaleMultiplier = .75;
 
-bool windowNeedsUpdating = true;
+bool updateRenderedPoints = true;
 
 sf::RectangleShape currentPoint;
 
@@ -42,11 +43,11 @@ int main()
 {
 	srand(rand());
 
-
 	currentResX = sf::VideoMode::getDesktopMode().width * scaleMultiplier;
 	currentResY = sf::VideoMode::getDesktopMode().height * scaleMultiplier;
 	float aspectRatio = (float)currentResX / (float)currentResY;
 	std::string currentMessage = "DEBUG";
+	std::string pointsDisplayMessage = "-1";
 
 	//VideoMode Object
 	sf::VideoMode vm(currentResX, currentResY);
@@ -54,28 +55,47 @@ int main()
 	window.setFramerateLimit(60);
 
 	//create a point
-	sf::Vector2f defaultSize(2, 2);
-	sf::Vector2f largeSize(RECT_SIDE_LENGTH, RECT_SIDE_LENGTH);
+	sf::Vector2f defaultSize(RECT_SIDE_LENGTH, RECT_SIDE_LENGTH);
+	sf::Vector2f largeSize(RECT_SIDE_LENGTH * 2, RECT_SIDE_LENGTH * 2);
+	const sf::Vector2f RENDERING_SIZE(1, 1);
 
-	sf::Vector2f defaultOrigin(1, 1);
-	sf::Vector2f largeOrigin(RECT_SIDE_LENGTH / 2, RECT_SIDE_LENGTH / 2);
+	sf::Vector2f defaultOrigin(RECT_SIDE_LENGTH / 2, RECT_SIDE_LENGTH / 2);
+	sf::Vector2f largeOrigin(RECT_SIDE_LENGTH, RECT_SIDE_LENGTH);
+	const sf::Vector2f RENDERING_ORIGIN(0.5, 0.5);
 
 	sf::Font font;
 	font.loadFromFile("fonts/SebastianSerifNbp-7weB.ttf");
 
-	sf::Text text;
-	text.setFont(font);
-	text.setCharacterSize(75 / aspectRatio * scaleMultiplier);
+	sf::Text messageBox;
+	messageBox.setFont(font);
+	messageBox.setCharacterSize(75 / aspectRatio * scaleMultiplier);
 
-	text.setPosition(font.getLineSpacing(text.getCharacterSize()), font.getLineSpacing(text.getCharacterSize()));
+	//Text Offset from the edge of the screen, based on font size, and aspect ratio
+	sf::Vector2f minCharSpacing(font.getLineSpacing(messageBox.getCharacterSize()), font.getLineSpacing(messageBox.getCharacterSize()));
+	messageBox.setPosition(minCharSpacing);
+
+	sf::Text pointsDisplay;
+	pointsDisplay.setFont(font);
+	pointsDisplay.setCharacterSize(75 / aspectRatio * scaleMultiplier);
 
 
+	//Message Box background
 	const int TEXT_BOX_BORDER = 5;
 	sf::Vector2f textBoundingBoxVector;
 	sf::RectangleShape textBackground;
-	textBackground.setPosition((text.getPosition().x - 2) - TEXT_BOX_BORDER, (text.getPosition().y+7) - TEXT_BOX_BORDER);
+	textBackground.setFillColor(TEXT_BOX_BACKGROUND_COLOR);
 
-	
+	//Point Display Background
+	sf::RectangleShape pointsDisplayBkgd;
+	pointsDisplayBkgd.setFillColor(TEXT_BOX_BACKGROUND_COLOR);
+
+	//Helper line that connects the user's recently generated point, to their mouse
+	sf::RectangleShape shapeVisualizer;
+	const float LINE_WIDTH = 2;
+	shapeVisualizer.setFillColor(sf::Color::White);
+
+
+
 
 	//Main game loop
 	while (window.isOpen())
@@ -111,7 +131,7 @@ int main()
 		switch (appState)
 		{
 		case(ApplicationState::WELCOME):
-			currentMessage = "Welcome to the Chaos Game!\nUse Left Mouse Button to create at least 3 points.\nUse Left Mouse Button on the Green point to start computing!";
+			currentMessage = "Welcome to the Chaos Game!\nUse Left Mouse Button to create at least 3 points.";
 			break;
 
 		case(ApplicationState::DRAWING):
@@ -133,21 +153,16 @@ int main()
 			break;
 
 		case(ApplicationState::FINISHED):
-			currentMessage = "Finished! Total points on screen: " + std::to_string(pointPositions.size()) + "!!!\nPress Return to start again or Escape to exit.";
+			currentMessage = "Finished!\nPress Return to start again or Escape to exit.";
 			break;
 		}
 
+		//Draw the stuff!
+		window.clear(sf::Color(20, 20, 20, 255));
 
-		if (windowNeedsUpdating)
+
+		if (appState == ApplicationState::DRAWING || updateRenderedPoints)
 		{
-			std::cout << "X: " << textBoundingBoxVector.x << ", Y: " << textBoundingBoxVector.y << std::endl;
-
-
-			//Draw the stuff!
-			window.clear(sf::Color(20, 20, 20, 255));
-
-
-
 			//Draw all points!
 			for (int i = pointPositions.size() - 1; i >= 0; i--)
 			{
@@ -177,12 +192,14 @@ int main()
 					if (i < numManuallyGenPoints)
 					{
 						currentPoint.setFillColor(sf::Color::Blue);
+						currentPoint.setSize(defaultSize);
+						currentPoint.setOrigin(defaultOrigin);
 					}
 					else
 					{
 						currentPoint.setFillColor(sf::Color::White);
-						currentPoint.setSize(defaultSize);
-						currentPoint.setOrigin(defaultOrigin);
+						currentPoint.setSize(RENDERING_SIZE);
+						currentPoint.setOrigin(RENDERING_ORIGIN);
 					}
 				}
 
@@ -190,21 +207,50 @@ int main()
 			}
 
 
+			pointsDisplay.setString("User-created Points: " + std::to_string(numManuallyGenPoints));
+			pointsDisplay.setPosition(currentResX - pointsDisplay.getLocalBounds().width - minCharSpacing.x, currentResY - pointsDisplay.getLocalBounds().height - minCharSpacing.y);
+			pointsDisplayBkgd.setPosition((pointsDisplay.getPosition().x - 2) - TEXT_BOX_BORDER, (pointsDisplay.getPosition().y + 7) - TEXT_BOX_BORDER);
 
 
+			textBoundingBoxVector.x = pointsDisplay.getLocalBounds().width + (TEXT_BOX_BORDER * 2);
+			textBoundingBoxVector.y = pointsDisplay.getLocalBounds().height + (TEXT_BOX_BORDER * 2);
+			pointsDisplayBkgd.setSize(textBoundingBoxVector);
 
-			//THE ORDER HERE MATTERS!!!
-			text.setString(currentMessage);
+			window.draw(pointsDisplayBkgd);
+			window.draw(pointsDisplay);
 
-			textBoundingBoxVector.x = text.getLocalBounds().width + (TEXT_BOX_BORDER * 2);
-			textBoundingBoxVector.y = text.getLocalBounds().height + (TEXT_BOX_BORDER * 2);
 
+			//THE DRAW ORDER HERE MATTERS!!!
+			messageBox.setString(currentMessage);
+			textBackground.setPosition((messageBox.getPosition().x - 2) - TEXT_BOX_BORDER, (messageBox.getPosition().y + 7) - TEXT_BOX_BORDER);
+
+			textBoundingBoxVector.x = messageBox.getLocalBounds().width + (TEXT_BOX_BORDER * 2);
+			textBoundingBoxVector.y = messageBox.getLocalBounds().height + (TEXT_BOX_BORDER * 2);
 			textBackground.setSize(textBoundingBoxVector);
-			textBackground.setFillColor(TEXT_BOX_BACKGROUND_COLOR);
 
 			window.draw(textBackground);
-			window.draw(text);
-			//Up to here!!
+			window.draw(messageBox);
+
+
+			float mag = 0;
+			if (appState == ApplicationState::DRAWING && pointPositions.size() > 0)
+			{
+				shapeVisualizer.setPosition(pointPositions[pointPositions.size() - 1]);
+
+				sf::Vector2f pointDistances = (sf::Vector2f)sf::Mouse::getPosition(window) - pointPositions[pointPositions.size() - 1];
+
+				float mx = pointPositions[pointPositions.size() - 1].x - sf::Mouse::getPosition(window).x;
+				float my = pointPositions[pointPositions.size() - 1].y - sf::Mouse::getPosition(window).y;
+
+				mag = (mx * mx) + (my * my);
+
+				float angle = atan2(-my, -mx);
+
+				shapeVisualizer.setRotation(angle * 180 / PI);
+			}
+
+			shapeVisualizer.setSize(sf::Vector2f(sqrt(mag), LINE_WIDTH));
+			window.draw(shapeVisualizer);
 
 
 			window.display();
@@ -212,10 +258,10 @@ int main()
 			if (appState == ApplicationState::RENDERING)
 			{
 				appState = ApplicationState::FINISHED;
-				windowNeedsUpdating = true;
+				updateRenderedPoints = true;
 			}
 			else
-			windowNeedsUpdating = false;
+				updateRenderedPoints = false;
 		}
 	}
 
@@ -224,7 +270,7 @@ int main()
 
 void GeneratePointOnClick(sf::RenderWindow& _window)
 {
-	if ( appState == ApplicationState::WELCOME || appState == ApplicationState::DRAWING)
+	if (appState == ApplicationState::WELCOME || appState == ApplicationState::DRAWING)
 	{
 
 		//Create a point where the mouse position is
@@ -255,42 +301,47 @@ void GeneratePointOnClick(sf::RenderWindow& _window)
 
 void GenerateSierpinksiTrianglePoints(int _resolution)
 {
-	sf::Vector2f startingPoint(currentResX / 2, currentResY / 2);
+	sf::Vector2f startingPoint(rand() % currentResX, rand() % currentResY);
 	sf::Vector2f randomVertex = pointPositions[rand() % numManuallyGenPoints];
+	sf::Vector2f previousVertex;
 	sf::Vector2f midPoint;
 
+	float scaler = (float)numManuallyGenPoints / (float(numManuallyGenPoints) + 3.0f);
+	std::cout << "Scaler: " << scaler << std::endl;
 	pointPositions.reserve(numManuallyGenPoints + _resolution);
+	int seed = rand() % numManuallyGenPoints;
+	randomVertex = pointPositions[seed];
+
 	for (int i = 0; i < _resolution; i++)
 	{
-		 randomVertex = pointPositions[rand() % numManuallyGenPoints];
+		seed = rand() % numManuallyGenPoints;
+		randomVertex = pointPositions[seed];
 
-		 midPoint.x = (startingPoint.x + randomVertex.x) / 2;
-		 midPoint.y = (startingPoint.y + randomVertex.y) / 2;
-		 startingPoint = midPoint;
+		midPoint.x = startingPoint.x + (randomVertex.x - (startingPoint.x)) * scaler;
+		midPoint.y = startingPoint.y + (randomVertex.y - (startingPoint.y)) * scaler;
 
-		 //pointPositions[i] = midPoint;
-		 pointPositions.emplace_back(midPoint);
+		startingPoint = midPoint;
+		pointPositions.emplace_back(midPoint);
 
+		previousVertex = randomVertex;
 	}
 	appState = ApplicationState::RENDERING;
-	windowNeedsUpdating = true;
+	updateRenderedPoints = true;
 }
-
 void ResetApplication()
 {
 	pointPositions.clear();
 	numManuallyGenPoints = 0;
-	windowNeedsUpdating = true;
+	updateRenderedPoints = true;
 	appState = ApplicationState::WELCOME;
 }
-
 void GeneratePoint(sf::Vector2f inputPoint)
 {
 	pointPositions.push_back(inputPoint);
 	numManuallyGenPoints++;
 	if (pointPositions.size() > 0) appState = ApplicationState::DRAWING;
 
-	windowNeedsUpdating = true;
+	updateRenderedPoints = true;
 }
 void GenerateRandomPoint()
 {
