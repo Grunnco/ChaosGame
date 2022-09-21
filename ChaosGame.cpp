@@ -12,28 +12,34 @@ enum class ApplicationState
 	RENDERING = 3,
 	FINISHED = 4
 };
-
+//Prototypes
 void GeneratePoint(sf::Vector2f inputPoint);
 void GeneratePointOnClick(sf::RenderWindow&);
 void GenerateRandomPoint();
 void GenerateSierpinksiTrianglePoints(int);
 void ResetApplication();
 
+//ApplicationState instance and vector of points
 ApplicationState appState = ApplicationState::WELCOME;
 std::vector<sf::Vector2f> pointPositions;
 
+//Declare Constants
 const std::string APP_NAME = "Chaos Game";
+const int TEXTBOX_BKG_W_ALIGN = 2;
+const int TEXTBOX_BKG_H_ALIGN = 7;
 const int PIXEL_TOLERANCE_VAL = 10;
 const int RECT_SIDE_LENGTH = 6;
 const int additionalPointsToGenerate = 100000;
-const float PI = 4.0 * atan(1.0);
+const float PI = 4.0f * atan(1.0f);
 
 const sf::Color TEXT_BOX_BACKGROUND_COLOR(0, 0, 0, 127);
+const sf::Color WINDOW_BACKGROUND_COLOR(20, 20, 20, 255);
+
+//Global variables
 int numManuallyGenPoints = 0;
 int currentResX = 1920;
 int currentResY = 1080;
-double scaleMultiplier = .75;
-
+double scaleMultiplier = 0.75;
 bool updateRenderedPoints = true;
 
 sf::RectangleShape currentPoint;
@@ -93,8 +99,6 @@ int main()
 	sf::RectangleShape shapeVisualizer;
 	const float LINE_WIDTH = 2;
 	shapeVisualizer.setFillColor(sf::Color::White);
-
-
 
 
 	//Main game loop
@@ -157,12 +161,47 @@ int main()
 			break;
 		}
 
-		//Draw the stuff!
-		window.clear(sf::Color(20, 20, 20, 255));
 
+		/*
+		***************
+		    RENDERING 
+		***************
+		*/
 
 		if (appState == ApplicationState::DRAWING || updateRenderedPoints)
 		{
+			//First Clear the window and fill with backgroundColor
+			window.clear(WINDOW_BACKGROUND_COLOR);
+
+			float pointToPointMagnitude = 0;
+			float mx = 0;
+			float my = 0;
+			if (appState == ApplicationState::DRAWING && pointPositions.size() > 0)
+			{
+				for (int i = 1; i < pointPositions.size(); i++)
+				{
+					shapeVisualizer.setPosition(pointPositions[i - 1]);
+					mx = pointPositions[i - 1].x - pointPositions[i].x;
+					my = pointPositions[i - 1].y - pointPositions[i].y;
+					pointToPointMagnitude = (mx * mx) + (my * my);
+					float angle = atan2(-my, -mx);
+					shapeVisualizer.setRotation(angle * 180 / PI);
+
+					shapeVisualizer.setSize(sf::Vector2f(sqrt(pointToPointMagnitude), LINE_WIDTH));
+					window.draw(shapeVisualizer);
+				}
+
+				shapeVisualizer.setPosition(pointPositions[pointPositions.size() - 1]);
+				mx = pointPositions[pointPositions.size() - 1].x - sf::Mouse::getPosition(window).x;
+				my = pointPositions[pointPositions.size() - 1].y - sf::Mouse::getPosition(window).y;
+				pointToPointMagnitude = (mx * mx) + (my * my);
+				float angle = atan2(-my, -mx);
+				shapeVisualizer.setRotation(angle * 180 / PI);
+
+				shapeVisualizer.setSize(sf::Vector2f(sqrt(pointToPointMagnitude), LINE_WIDTH));
+				window.draw(shapeVisualizer);
+			}
+			
 			//Draw all points!
 			for (int i = pointPositions.size() - 1; i >= 0; i--)
 			{
@@ -207,10 +246,10 @@ int main()
 			}
 
 
+			//Draw the Points text in the bottom right text box
 			pointsDisplay.setString("User-created Points: " + std::to_string(numManuallyGenPoints));
 			pointsDisplay.setPosition(currentResX - pointsDisplay.getLocalBounds().width - minCharSpacing.x, currentResY - pointsDisplay.getLocalBounds().height - minCharSpacing.y);
-			pointsDisplayBkgd.setPosition((pointsDisplay.getPosition().x - 2) - TEXT_BOX_BORDER, (pointsDisplay.getPosition().y + 7) - TEXT_BOX_BORDER);
-
+			pointsDisplayBkgd.setPosition((pointsDisplay.getPosition().x - TEXTBOX_BKG_W_ALIGN) - TEXT_BOX_BORDER, (pointsDisplay.getPosition().y + TEXTBOX_BKG_H_ALIGN) - TEXT_BOX_BORDER);
 
 			textBoundingBoxVector.x = pointsDisplay.getLocalBounds().width + (TEXT_BOX_BORDER * 2);
 			textBoundingBoxVector.y = pointsDisplay.getLocalBounds().height + (TEXT_BOX_BORDER * 2);
@@ -220,9 +259,9 @@ int main()
 			window.draw(pointsDisplay);
 
 
-			//THE DRAW ORDER HERE MATTERS!!!
+			//Draw the CurrentMessage in the top left text box
 			messageBox.setString(currentMessage);
-			textBackground.setPosition((messageBox.getPosition().x - 2) - TEXT_BOX_BORDER, (messageBox.getPosition().y + 7) - TEXT_BOX_BORDER);
+			textBackground.setPosition((messageBox.getPosition().x - TEXTBOX_BKG_W_ALIGN) - TEXT_BOX_BORDER, (messageBox.getPosition().y + TEXTBOX_BKG_H_ALIGN) - TEXT_BOX_BORDER);
 
 			textBoundingBoxVector.x = messageBox.getLocalBounds().width + (TEXT_BOX_BORDER * 2);
 			textBoundingBoxVector.y = messageBox.getLocalBounds().height + (TEXT_BOX_BORDER * 2);
@@ -232,37 +271,22 @@ int main()
 			window.draw(messageBox);
 
 
-			float mag = 0;
-			if (appState == ApplicationState::DRAWING && pointPositions.size() > 0)
-			{
-				shapeVisualizer.setPosition(pointPositions[pointPositions.size() - 1]);
+			
 
-				sf::Vector2f pointDistances = (sf::Vector2f)sf::Mouse::getPosition(window) - pointPositions[pointPositions.size() - 1];
-
-				float mx = pointPositions[pointPositions.size() - 1].x - sf::Mouse::getPosition(window).x;
-				float my = pointPositions[pointPositions.size() - 1].y - sf::Mouse::getPosition(window).y;
-
-				mag = (mx * mx) + (my * my);
-
-				float angle = atan2(-my, -mx);
-
-				shapeVisualizer.setRotation(angle * 180 / PI);
-			}
-
-			shapeVisualizer.setSize(sf::Vector2f(sqrt(mag), LINE_WIDTH));
-			window.draw(shapeVisualizer);
+			
 
 
 			window.display();
 
-			if (appState == ApplicationState::RENDERING)
+			
+		}
+		if (appState == ApplicationState::RENDERING)
 			{
 				appState = ApplicationState::FINISHED;
 				updateRenderedPoints = true;
 			}
 			else
 				updateRenderedPoints = false;
-		}
 	}
 
 	return 0;
@@ -277,11 +301,9 @@ void GeneratePointOnClick(sf::RenderWindow& _window)
 		sf::Vector2f newPoint(sf::Mouse::getPosition(_window));
 
 		/*
-		*	Oh god where to begin...
-		*
 		*	We need to verify that the user has entered in at least 3 points.
 		*	If the user clicks on their first point then move on to the computation phase.
-		*	It will be virtually impossible to consistently click exactly on their first point they drew, so
+		*	It will be virtually impossible to consistently click exactly on the first point that they drew, so
 		*	introduce a tolerance level that the user has to click within to connect their shape together.
 		*/
 		if (pointPositions.size() > 2 &&
@@ -298,7 +320,6 @@ void GeneratePointOnClick(sf::RenderWindow& _window)
 
 	}
 }
-
 void GenerateSierpinksiTrianglePoints(int _resolution)
 {
 	sf::Vector2f startingPoint(rand() % currentResX, rand() % currentResY);
@@ -326,7 +347,6 @@ void GenerateSierpinksiTrianglePoints(int _resolution)
 		previousVertex = randomVertex;
 	}
 	appState = ApplicationState::RENDERING;
-	updateRenderedPoints = true;
 }
 void ResetApplication()
 {
